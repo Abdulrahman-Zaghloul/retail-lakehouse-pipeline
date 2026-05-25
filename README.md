@@ -1,6 +1,6 @@
 # Retail Lakehouse Analytics Platform
 
-A production-style data engineering portfolio project that builds a batch analytics platform for retail data.
+A production-style data engineering project that builds a batch analytics platform for retail data.
 
 ## Project Goal
 
@@ -10,7 +10,6 @@ The platform will ingest retail data from operational sources, land it in a data
 
 ## Target Architecture
 
-```text
 PostgreSQL source database
         ↓
 Python ingestion
