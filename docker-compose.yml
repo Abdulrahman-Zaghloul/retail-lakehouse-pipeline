@@ -1,0 +1,75 @@
+services:
+  postgres-source:
+    image: postgres:16
+    container_name: retail_postgres_source
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_SOURCE_DB}
+      POSTGRES_USER: ${POSTGRES_SOURCE_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_SOURCE_PASSWORD}
+    ports:
+      - "${POSTGRES_SOURCE_PORT}:5432"
+    volumes:
+      - postgres_source_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_SOURCE_USER} -d ${POSTGRES_SOURCE_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-warehouse:
+    image: postgres:16
+    container_name: retail_postgres_warehouse
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_WAREHOUSE_DB}
+      POSTGRES_USER: ${POSTGRES_WAREHOUSE_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_WAREHOUSE_PASSWORD}
+    ports:
+      - "${POSTGRES_WAREHOUSE_PORT}:5432"
+    volumes:
+      - postgres_warehouse_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_WAREHOUSE_USER} -d ${POSTGRES_WAREHOUSE_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: retail_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  create-minio-buckets:
+    image: minio/mc:latest
+    container_name: retail_create_minio_buckets
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local ${MINIO_ENDPOINT} ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      mc mb -p local/${MINIO_BUCKET_RAW};
+      mc mb -p local/${MINIO_BUCKET_CURATED};
+      mc ls local;
+      "
+    restart: "no"
+
+volumes:
+  postgres_source_data:
+  postgres_warehouse_data:
+  minio_data:
