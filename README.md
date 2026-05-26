@@ -10,36 +10,36 @@ The platform will ingest retail data from operational sources, land it in a data
 
 ## Target Architecture
 
-PostgreSQL source database
+1. PostgreSQL source database
+	↓
+2. Python ingestion
         ↓
-Python ingestion
+3. S3-compatible data lake
         ↓
-S3-compatible data lake
+4. Spark transformations
         ↓
-Spark transformations
+5. Warehouse tables
         ↓
-Warehouse tables
+6. dbt models and tests
         ↓
-dbt models and tests
+7. Dashboards and documentation
         ↓
-Dashboards and documentation
-        ↓
-Airflow orchestration
+8. Airflow orchestration
 
 ## Tech Stack
-Python
-SQL
-PostgreSQL
-Docker
-MinIO for local S3-compatible storage
-Apache Spark
-dbt
-Apache Airflow
-GitHub Actions
-AWS S3 and Redshift in the cloud phase
+* Python
+* SQL
+* PostgreSQL
+* Docker
+* MinIO for local S3-compatible storage
+* Apache Spark
+* dbt
+* Apache Airflow
+* GitHub Actions
+* AWS S3 and Redshift in the cloud phase
 
 ## Repository Structure
-
+```code
 .
 ├── airflow/       # Airflow DAGs and orchestration code
 ├── dashboards/    # Dashboard exports and screenshots
@@ -51,17 +51,18 @@ AWS S3 and Redshift in the cloud phase
 ├── src/           # Python source code
 └── tests/         # Automated tests
 
+```
 ## Project Phases
-Local development environment
-PostgreSQL source database
-Synthetic retail data generation
-Raw ingestion to data lake
-Spark transformations
-Warehouse modeling with dbt
-Airflow orchestration
-Data quality and testing
-Cloud deployment
-Portfolio polish
+1. Local development environment
+2. PostgreSQL source database
+3. Synthetic retail data generation
+4. Raw ingestion to data lake
+5. Spark transformations
+6. Warehouse modeling with dbt
+7. Airflow orchestration
+8. Data quality and testing
+9. Cloud deployment
 
 ## Current Status
 Milestone 1: Repository initialization
+Milestone 2: Build Docker Enviroment
