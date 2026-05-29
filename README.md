@@ -64,5 +64,5 @@ The platform will ingest retail data from operational sources, land it in a data
 9. Cloud deployment
 
 ## Current Status
-Milestone 1: Repository initialization
-Milestone 2: Build Docker Enviroment
+
+Milestone 3: Operational retail source database and synthetic data generation.
