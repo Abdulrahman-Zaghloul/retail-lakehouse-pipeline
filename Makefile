@@ -1,7 +1,7 @@
 include .env
 export
 
-.PHONY: help tree status up down restart ps logs clean install schema-source generate-source-data source-counts
+.PHONY: help tree status up down restart ps logs clean install schema-source generate-source-data source-counts ingest-raw list-raw
 
 help:
 	@echo "Available commands:"
@@ -17,6 +17,8 @@ help:
 	@echo "  make schema-source         Apply source database schema"
 	@echo "  make generate-source-data  Generate fake retail source data"
 	@echo "  make source-counts         Show source table row counts"
+	@echo "  make ingest-raw            Extract PostgreSQL source tables to MinIO raw bucket"
+	@echo "  make list-raw              List files in the MinIO raw bucket"
 
 tree:
 	tree -L 3
@@ -65,3 +67,10 @@ source-counts:
 		-U $(POSTGRES_SOURCE_USER) \
 		-d $(POSTGRES_SOURCE_DB) \
 		-c "SELECT 'customers' AS table_name, COUNT(*) AS row_count FROM customers UNION ALL SELECT 'products', COUNT(*) FROM products UNION ALL SELECT 'orders', COUNT(*) FROM orders UNION ALL SELECT 'order_items', COUNT(*) FROM order_items UNION ALL SELECT 'payments', COUNT(*) FROM payments UNION ALL SELECT 'shipments', COUNT(*) FROM shipments ORDER BY table_name;"
+
+ingest-raw:
+	python -m src.ingestion.extract_postgres_to_minio
+
+list-raw:
+	docker compose run --rm --entrypoint /bin/sh create-minio-buckets \
+		-c "mc alias set local http://minio:9000 $(MINIO_ROOT_USER) $(MINIO_ROOT_PASSWORD) >/dev/null && mc ls --recursive local/$(MINIO_BUCKET_RAW)"
