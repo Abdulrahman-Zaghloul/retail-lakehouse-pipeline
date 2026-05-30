@@ -65,4 +65,4 @@ The platform will ingest retail data from operational sources, land it in a data
 
 ## Current Status
 
-Milestone 3: Operational retail source database and synthetic data generation.
+Milestone 5: Spark curated transformations from raw data lake to curated data lake.

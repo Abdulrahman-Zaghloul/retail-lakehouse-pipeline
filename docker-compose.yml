@@ -69,6 +69,26 @@ services:
       "
     restart: "no"
 
+  spark:
+    image: apache/spark:3.5.1
+    container_name: retail_spark
+    user: root
+    working_dir: /opt/retail
+    environment:
+      MINIO_ENDPOINT_INTERNAL: http://minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET_RAW: ${MINIO_BUCKET_RAW}
+      MINIO_BUCKET_CURATED: ${MINIO_BUCKET_CURATED}
+      HOME: /tmp
+      PYSPARK_PYTHON: python3
+    volumes:
+      - ./spark:/opt/retail/spark
+      - ./src:/opt/retail/src
+    depends_on:
+      minio:
+        condition: service_healthy
+
 volumes:
   postgres_source_data:
   postgres_warehouse_data:
