@@ -1,7 +1,7 @@
 include .env
 export
 
-.PHONY: help tree status up down restart ps logs clean install schema-source generate-source-data source-counts ingest-raw list-raw spark-version spark-curated list-curated
+.PHONY: help tree status up down restart ps logs clean install schema-source generate-source-data source-counts ingest-raw list-raw spark-version spark-curated list-curated load-warehouse warehouse-tables warehouse-counts
 
 help:
 	@echo "Available commands:"
@@ -22,6 +22,9 @@ help:
 	@echo "  make spark-version         Show Spark version from Docker container"
 	@echo "  make spark-curated         Build curated datasets with Spark"
 	@echo "  make list-curated          List files in the MinIO curated bucket"
+	@echo "  make load-warehouse        Load latest curated datasets into PostgreSQL warehouse"
+	@echo "  make warehouse-tables      List warehouse staging tables"
+	@echo "  make warehouse-counts      Show warehouse staging table row counts"
 
 tree:
 	tree -L 3
@@ -30,14 +33,14 @@ status:
 	git status
 
 up:
-	docker compose up -d
+	docker compose up -d postgres-source postgres-warehouse minio create-minio-buckets
 
 down:
 	docker compose down
 
 restart:
 	docker compose down
-	docker compose up -d
+	docker compose up -d postgres-source postgres-warehouse minio create-minio-buckets
 
 ps:
 	docker compose ps
@@ -98,3 +101,39 @@ spark-curated:
 list-curated:
 	docker compose run --rm --entrypoint /bin/sh create-minio-buckets \
 		-c "mc alias set local http://minio:9000 $(MINIO_ROOT_USER) $(MINIO_ROOT_PASSWORD) >/dev/null && mc ls --recursive local/$(MINIO_BUCKET_CURATED)"
+
+load-warehouse:
+	PGPASSWORD=$(POSTGRES_WAREHOUSE_PASSWORD) psql \
+		-h $(POSTGRES_WAREHOUSE_HOST) \
+		-p $(POSTGRES_WAREHOUSE_PORT) \
+		-U $(POSTGRES_WAREHOUSE_USER) \
+		-d $(POSTGRES_WAREHOUSE_DB) \
+		-c "CREATE SCHEMA IF NOT EXISTS staging;"
+	docker compose run --rm spark /opt/spark/bin/spark-submit \
+		--packages org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262,org.postgresql:postgresql:42.7.3 \
+		--conf spark.jars.ivy=/tmp/.ivy2 \
+		--conf spark.sql.session.timeZone=UTC \
+		--conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
+		--conf spark.hadoop.fs.s3a.endpoint=http://minio:9000 \
+		--conf spark.hadoop.fs.s3a.access.key=$(MINIO_ROOT_USER) \
+		--conf spark.hadoop.fs.s3a.secret.key=$(MINIO_ROOT_PASSWORD) \
+		--conf spark.hadoop.fs.s3a.path.style.access=true \
+		--conf spark.hadoop.fs.s3a.connection.ssl.enabled=false \
+		--conf spark.hadoop.fs.s3a.aws.credentials.provider=org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider \
+		spark/jobs/load_curated_to_warehouse.py
+
+warehouse-tables:
+	PGPASSWORD=$(POSTGRES_WAREHOUSE_PASSWORD) psql \
+		-h $(POSTGRES_WAREHOUSE_HOST) \
+		-p $(POSTGRES_WAREHOUSE_PORT) \
+		-U $(POSTGRES_WAREHOUSE_USER) \
+		-d $(POSTGRES_WAREHOUSE_DB) \
+		-c "\dt staging.*"
+
+warehouse-counts:
+	PGPASSWORD=$(POSTGRES_WAREHOUSE_PASSWORD) psql \
+		-h $(POSTGRES_WAREHOUSE_HOST) \
+		-p $(POSTGRES_WAREHOUSE_PORT) \
+		-U $(POSTGRES_WAREHOUSE_USER) \
+		-d $(POSTGRES_WAREHOUSE_DB) \
+		-c "SELECT 'customers_clean' AS table_name, COUNT(*) AS row_count FROM staging.customers_clean UNION ALL SELECT 'products_clean', COUNT(*) FROM staging.products_clean UNION ALL SELECT 'orders_clean', COUNT(*) FROM staging.orders_clean UNION ALL SELECT 'order_items_clean', COUNT(*) FROM staging.order_items_clean UNION ALL SELECT 'payments_clean', COUNT(*) FROM staging.payments_clean UNION ALL SELECT 'shipments_clean', COUNT(*) FROM staging.shipments_clean UNION ALL SELECT 'order_summary', COUNT(*) FROM staging.order_summary ORDER BY table_name;"

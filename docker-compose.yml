@@ -80,6 +80,11 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET_RAW: ${MINIO_BUCKET_RAW}
       MINIO_BUCKET_CURATED: ${MINIO_BUCKET_CURATED}
+      POSTGRES_WAREHOUSE_HOST: postgres-warehouse
+      POSTGRES_WAREHOUSE_PORT: 5432
+      POSTGRES_WAREHOUSE_DB: ${POSTGRES_WAREHOUSE_DB}
+      POSTGRES_WAREHOUSE_USER: ${POSTGRES_WAREHOUSE_USER}
+      POSTGRES_WAREHOUSE_PASSWORD: ${POSTGRES_WAREHOUSE_PASSWORD}
       HOME: /tmp
       PYSPARK_PYTHON: python3
     volumes:
@@ -87,6 +92,8 @@ services:
       - ./src:/opt/retail/src
     depends_on:
       minio:
+        condition: service_healthy
+      postgres-warehouse:
         condition: service_healthy
 
 volumes:
