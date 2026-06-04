@@ -54,3 +54,11 @@ derby.log
 dbt/**/target/
 dbt/**/logs/
 dbt/**/dbt_packages/
+
+# Airflow local runtime
+.venv-airflow/
+airflow/airflow.cfg
+airflow/*.pid
+airflow/*.log
+airflow/simple_auth_manager_passwords.json.generated
+airflow/logs/

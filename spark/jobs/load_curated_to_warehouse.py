@@ -81,6 +81,7 @@ def write_to_warehouse(
     (
         df.write.format("jdbc")
         .mode("overwrite")
+        .option("truncate", "true")
         .option("url", jdbc_url)
         .option("dbtable", target_table)
         .option("user", user)
