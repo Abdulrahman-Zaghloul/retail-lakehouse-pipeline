@@ -1,0 +1,19 @@
+select
+    customer_id,
+    first_name,
+    last_name,
+    email,
+    phone,
+    signup_date,
+    loyalty_tier,
+    city,
+    state,
+    country,
+    created_at,
+    updated_at,
+    source_ingestion_date,
+    source_run_id,
+    curated_run_id,
+    processed_at_utc,
+    warehouse_loaded_at_utc
+from {{ source('warehouse_staging', 'customers_clean') }}

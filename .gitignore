@@ -49,3 +49,8 @@ derby.log
 
 # Docker
 *.pid
+
+# Nested dbt outputs
+dbt/**/target/
+dbt/**/logs/
+dbt/**/dbt_packages/

@@ -1,0 +1,86 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: "Customer dimension with profile and loyalty attributes."
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+          - unique
+      - name: email
+        tests:
+          - not_null
+
+  - name: dim_products
+    description: "Product dimension with product, category, brand, and pricing attributes."
+    columns:
+      - name: product_id
+        tests:
+          - not_null
+          - unique
+      - name: sku
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_dates
+    description: "Date dimension generated from observed order dates."
+    columns:
+      - name: date_day
+        tests:
+          - not_null
+          - unique
+
+  - name: fact_orders
+    description: "Order-level fact table with payment and shipment attributes."
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+
+  - name: fact_order_items
+    description: "Order item-level fact table."
+    columns:
+      - name: order_item_id
+        tests:
+          - not_null
+          - unique
+      - name: order_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fact_orders')
+                field: order_id
+      - name: product_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: product_id
+
+  - name: mart_daily_sales
+    description: "Daily sales KPI mart for finance and analytics reporting."
+    columns:
+      - name: order_date
+        tests:
+          - not_null
+          - unique
+
+  - name: mart_customer_revenue
+    description: "Customer-level revenue and order history mart for marketing analysis."
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+          - unique

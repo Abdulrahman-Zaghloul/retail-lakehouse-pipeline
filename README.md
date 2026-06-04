@@ -65,4 +65,4 @@ The platform will ingest retail data from operational sources, land it in a data
 
 ## Current Status
 
-Milestone 5: Spark curated transformations from raw data lake to curated data lake.
+Milestone 7: dbt dimensional warehouse models, tests, and analytics marts.

@@ -1,0 +1,63 @@
+version: 2
+
+sources:
+  - name: warehouse_staging
+    database: retail_warehouse
+    schema: staging
+    description: "Warehouse staging tables loaded from Spark curated datasets."
+    tables:
+      - name: customers_clean
+        description: "Cleaned customer records from the curated data lake."
+        columns:
+          - name: customer_id
+            tests:
+              - not_null
+              - unique
+
+      - name: products_clean
+        description: "Cleaned product records from the curated data lake."
+        columns:
+          - name: product_id
+            tests:
+              - not_null
+              - unique
+
+      - name: orders_clean
+        description: "Cleaned order records from the curated data lake."
+        columns:
+          - name: order_id
+            tests:
+              - not_null
+              - unique
+
+      - name: order_items_clean
+        description: "Cleaned order item records from the curated data lake."
+        columns:
+          - name: order_item_id
+            tests:
+              - not_null
+              - unique
+
+      - name: payments_clean
+        description: "Cleaned payment records from the curated data lake."
+        columns:
+          - name: payment_id
+            tests:
+              - not_null
+              - unique
+
+      - name: shipments_clean
+        description: "Cleaned shipment records from the curated data lake."
+        columns:
+          - name: shipment_id
+            tests:
+              - not_null
+              - unique
+
+      - name: order_summary
+        description: "Curated order-level summary created by Spark."
+        columns:
+          - name: order_id
+            tests:
+              - not_null
+              - unique
