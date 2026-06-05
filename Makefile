@@ -1,7 +1,12 @@
+SHELL := /bin/bash
+
 include .env
 export
 
-.PHONY: help tree status up down restart ps logs clean install schema-source generate-source-data source-counts ingest-raw list-raw spark-version spark-curated list-curated load-warehouse warehouse-tables warehouse-counts
+PROJECT_VENV_ACTIVATE = if [ -f "venv/bin/activate" ]; then source venv/bin/activate; elif [ -f ".venv/bin/activate" ]; then source .venv/bin/activate; else echo "ERROR: Could not find project venv or .venv"; exit 1; fi
+AIRFLOW_VENV_ACTIVATE = if [ -f ".venv-airflow/bin/activate" ]; then source .venv-airflow/bin/activate; else echo "ERROR: Could not find .venv-airflow"; exit 1; fi
+
+.PHONY: help tree status up down restart ps logs clean install schema-source generate-source-data source-counts ingest-raw list-raw spark-version spark-curated list-curated load-warehouse warehouse-tables warehouse-counts dbt-debug dbt-run dbt-test dbt-build airflow-list airflow-test pipeline-local
 
 help:
 	@echo "Available commands:"
@@ -25,6 +30,13 @@ help:
 	@echo "  make load-warehouse        Load latest curated datasets into PostgreSQL warehouse"
 	@echo "  make warehouse-tables      List warehouse staging tables"
 	@echo "  make warehouse-counts      Show warehouse staging table row counts"
+	@echo "  make dbt-debug             Test dbt warehouse connection"
+	@echo "  make dbt-run               Run dbt models"
+	@echo "  make dbt-test              Run dbt tests"
+	@echo "  make dbt-build             Run dbt models and tests"
+	@echo "  make airflow-list          List Airflow DAGs"
+	@echo "  make airflow-test          Test the full Airflow DAG"
+	@echo "  make pipeline-local        Run the full pipeline locally without Airflow"
 
 tree:
 	tree -L 3
@@ -52,8 +64,7 @@ clean:
 	docker compose down -v
 
 install:
-	pip install --upgrade pip
-	pip install -r requirements.txt
+	$(PROJECT_VENV_ACTIVATE); pip install --upgrade pip; pip install -r requirements.txt
 
 schema-source:
 	PGPASSWORD=$(POSTGRES_SOURCE_PASSWORD) psql \
@@ -64,7 +75,7 @@ schema-source:
 		-f docker/postgres/source_schema.sql
 
 generate-source-data:
-	python -m src.generation.generate_retail_data
+	$(PROJECT_VENV_ACTIVATE); python -m src.generation.generate_retail_data
 
 source-counts:
 	PGPASSWORD=$(POSTGRES_SOURCE_PASSWORD) psql \
@@ -75,7 +86,7 @@ source-counts:
 		-c "SELECT 'customers' AS table_name, COUNT(*) AS row_count FROM customers UNION ALL SELECT 'products', COUNT(*) FROM products UNION ALL SELECT 'orders', COUNT(*) FROM orders UNION ALL SELECT 'order_items', COUNT(*) FROM order_items UNION ALL SELECT 'payments', COUNT(*) FROM payments UNION ALL SELECT 'shipments', COUNT(*) FROM shipments ORDER BY table_name;"
 
 ingest-raw:
-	python -m src.ingestion.extract_postgres_to_minio
+	$(PROJECT_VENV_ACTIVATE); python -m src.ingestion.extract_postgres_to_minio
 
 list-raw:
 	docker compose run --rm --entrypoint /bin/sh create-minio-buckets \
@@ -137,3 +148,37 @@ warehouse-counts:
 		-U $(POSTGRES_WAREHOUSE_USER) \
 		-d $(POSTGRES_WAREHOUSE_DB) \
 		-c "SELECT 'customers_clean' AS table_name, COUNT(*) AS row_count FROM staging.customers_clean UNION ALL SELECT 'products_clean', COUNT(*) FROM staging.products_clean UNION ALL SELECT 'orders_clean', COUNT(*) FROM staging.orders_clean UNION ALL SELECT 'order_items_clean', COUNT(*) FROM staging.order_items_clean UNION ALL SELECT 'payments_clean', COUNT(*) FROM staging.payments_clean UNION ALL SELECT 'shipments_clean', COUNT(*) FROM staging.shipments_clean UNION ALL SELECT 'order_summary', COUNT(*) FROM staging.order_summary ORDER BY table_name;"
+
+dbt-debug:
+	$(PROJECT_VENV_ACTIVATE); cd dbt/retail_analytics && dbt debug
+
+dbt-run:
+	$(PROJECT_VENV_ACTIVATE); cd dbt/retail_analytics && dbt run
+
+dbt-test:
+	$(PROJECT_VENV_ACTIVATE); cd dbt/retail_analytics && dbt test
+
+dbt-build:
+	$(PROJECT_VENV_ACTIVATE); cd dbt/retail_analytics && dbt build
+
+airflow-list:
+	$(AIRFLOW_VENV_ACTIVATE); \
+	export AIRFLOW_HOME=$$(pwd)/airflow; \
+	export AIRFLOW__CORE__DAGS_FOLDER=$$(pwd)/airflow/dags; \
+	export AIRFLOW__CORE__LOAD_EXAMPLES=False; \
+	airflow dags list | grep retail || true
+
+airflow-test:
+	$(AIRFLOW_VENV_ACTIVATE); \
+	export AIRFLOW_HOME=$$(pwd)/airflow; \
+	export AIRFLOW__CORE__DAGS_FOLDER=$$(pwd)/airflow/dags; \
+	export AIRFLOW__CORE__LOAD_EXAMPLES=False; \
+	airflow dags test retail_lakehouse_pipeline 2026-06-04
+
+pipeline-local:
+	make up
+	make generate-source-data
+	make ingest-raw
+	make spark-curated
+	make load-warehouse
+	make dbt-build

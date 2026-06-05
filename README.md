@@ -65,4 +65,4 @@ The platform will ingest retail data from operational sources, land it in a data
 
 ## Current Status
 
-Milestone 7: dbt dimensional warehouse models, tests, and analytics marts.
+Milestone 9: Operational documentation, runbook, data quality notes, and local pipeline commands.
