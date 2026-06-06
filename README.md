@@ -65,4 +65,4 @@ The platform will ingest retail data from operational sources, land it in a data
 
 ## Current Status
 
-Milestone 9: Operational documentation, runbook, data quality notes, and local pipeline commands.
+Milestone 10: Python unit tests and GitHub Actions CI.

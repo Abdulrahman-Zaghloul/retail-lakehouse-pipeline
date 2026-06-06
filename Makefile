@@ -6,7 +6,7 @@ export
 PROJECT_VENV_ACTIVATE = if [ -f "venv/bin/activate" ]; then source venv/bin/activate; elif [ -f ".venv/bin/activate" ]; then source .venv/bin/activate; else echo "ERROR: Could not find project venv or .venv"; exit 1; fi
 AIRFLOW_VENV_ACTIVATE = if [ -f ".venv-airflow/bin/activate" ]; then source .venv-airflow/bin/activate; else echo "ERROR: Could not find .venv-airflow"; exit 1; fi
 
-.PHONY: help tree status up down restart ps logs clean install schema-source generate-source-data source-counts ingest-raw list-raw spark-version spark-curated list-curated load-warehouse warehouse-tables warehouse-counts dbt-debug dbt-run dbt-test dbt-build airflow-list airflow-test pipeline-local
+.PHONY: help tree status up down restart ps logs clean install test compile schema-source generate-source-data source-counts ingest-raw list-raw spark-version spark-curated list-curated load-warehouse warehouse-tables warehouse-counts dbt-debug dbt-run dbt-test dbt-build airflow-list airflow-test pipeline-local
 
 help:
 	@echo "Available commands:"
@@ -37,6 +37,8 @@ help:
 	@echo "  make airflow-list          List Airflow DAGs"
 	@echo "  make airflow-test          Test the full Airflow DAG"
 	@echo "  make pipeline-local        Run the full pipeline locally without Airflow"
+	@echo "  make test                  Run Python unit tests"
+	@echo "  make compile               Compile Python files to catch syntax errors"
 
 tree:
 	tree -L 3
@@ -182,3 +184,8 @@ pipeline-local:
 	make spark-curated
 	make load-warehouse
 	make dbt-build
+test:
+	$(PROJECT_VENV_ACTIVATE); PYTHONPATH=. pytest -q
+
+compile:
+	$(PROJECT_VENV_ACTIVATE); python -m compileall src spark airflow/dags
