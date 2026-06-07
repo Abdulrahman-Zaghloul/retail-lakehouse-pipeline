@@ -39,6 +39,12 @@ help:
 	@echo "  make pipeline-local        Run the full pipeline locally without Airflow"
 	@echo "  make test                  Run Python unit tests"
 	@echo "  make compile               Compile Python files to catch syntax errors"
+	@echo "  make dashboard-daily-sales       Run daily sales dashboard query"
+	@echo "  make dashboard-monthly-revenue   Run monthly revenue dashboard query"
+	@echo "  make dashboard-top-products      Run top products dashboard query"
+	@echo "  make dashboard-customer-revenue  Run customer revenue dashboard query"
+	@echo "  make dashboard-order-status      Run order status dashboard query"
+	@echo "  make dashboard-loyalty-revenue   Run loyalty tier revenue dashboard query"
 
 tree:
 	tree -L 3
@@ -189,3 +195,53 @@ test:
 
 compile:
 	$(PROJECT_VENV_ACTIVATE); python -m compileall src spark airflow/dags
+
+dashboard-daily-sales:
+	PGPASSWORD=$(POSTGRES_WAREHOUSE_PASSWORD) psql \
+		-h $(POSTGRES_WAREHOUSE_HOST) \
+		-p $(POSTGRES_WAREHOUSE_PORT) \
+		-U $(POSTGRES_WAREHOUSE_USER) \
+		-d $(POSTGRES_WAREHOUSE_DB) \
+		-f analytics/queries/daily_sales.sql
+
+dashboard-monthly-revenue:
+	PGPASSWORD=$(POSTGRES_WAREHOUSE_PASSWORD) psql \
+		-h $(POSTGRES_WAREHOUSE_HOST) \
+		-p $(POSTGRES_WAREHOUSE_PORT) \
+		-U $(POSTGRES_WAREHOUSE_USER) \
+		-d $(POSTGRES_WAREHOUSE_DB) \
+		-f analytics/queries/monthly_revenue.sql
+
+dashboard-top-products:
+	PGPASSWORD=$(POSTGRES_WAREHOUSE_PASSWORD) psql \
+		-h $(POSTGRES_WAREHOUSE_HOST) \
+		-p $(POSTGRES_WAREHOUSE_PORT) \
+		-U $(POSTGRES_WAREHOUSE_USER) \
+		-d $(POSTGRES_WAREHOUSE_DB) \
+		-f analytics/queries/top_products.sql
+
+dashboard-customer-revenue:
+	PGPASSWORD=$(POSTGRES_WAREHOUSE_PASSWORD) psql \
+		-h $(POSTGRES_WAREHOUSE_HOST) \
+		-p $(POSTGRES_WAREHOUSE_PORT) \
+		-U $(POSTGRES_WAREHOUSE_USER) \
+		-d $(POSTGRES_WAREHOUSE_DB) \
+		-f analytics/queries/customer_revenue.sql
+
+dashboard-order-status:
+	PGPASSWORD=$(POSTGRES_WAREHOUSE_PASSWORD) psql \
+		-h $(POSTGRES_WAREHOUSE_HOST) \
+		-p $(POSTGRES_WAREHOUSE_PORT) \
+		-U $(POSTGRES_WAREHOUSE_USER) \
+		-d $(POSTGRES_WAREHOUSE_DB) \
+		-f analytics/queries/order_status_summary.sql
+
+dashboard-loyalty-revenue:
+	PGPASSWORD=$(POSTGRES_WAREHOUSE_PASSWORD) psql \
+		-h $(POSTGRES_WAREHOUSE_HOST) \
+		-p $(POSTGRES_WAREHOUSE_PORT) \
+		-U $(POSTGRES_WAREHOUSE_USER) \
+		-d $(POSTGRES_WAREHOUSE_DB) \
+		-f analytics/queries/loyalty_tier_revenue.sql
+
+.PHONY: dashboard-daily-sales dashboard-monthly-revenue dashboard-top-products dashboard-customer-revenue dashboard-order-status dashboard-loyalty-revenue
